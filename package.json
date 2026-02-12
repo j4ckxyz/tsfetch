@@ -1,0 +1,36 @@
+{
+  "name": "tsfetch",
+  "version": "0.1.0",
+  "description": "Neofetch-style CLI dashboard for Tailscale tailnets",
+  "license": "MIT",
+  "private": false,
+  "type": "commonjs",
+  "bin": {
+    "tsfetch": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "install.sh",
+    "install.ps1"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist release",
+    "clean:appledouble": "node scripts/clean-appledouble.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "release:build": "npm run clean:appledouble && npm run build && pkg dist/index.js --targets node18-macos-x64,node18-macos-arm64,node18-linux-x64,node18-linux-arm64,node18-win-x64 --output release/tsfetch"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "pkg": "^5.8.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
+  }
+}
