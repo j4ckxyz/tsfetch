@@ -49,6 +49,12 @@ irm https://raw.githubusercontent.com/your-username/tsfetch/main/install.ps1 | i
 tsfetch
 ```
 
+Update to latest release:
+
+```bash
+tsfetch update
+```
+
 ### Options
 
 - `-v, --verbose` show additional node lists and traffic
@@ -58,6 +64,10 @@ tsfetch
 - `--private`, `--redact` hide personal/sensitive details (emails, hostnames, IPs)
 - `--version` print version
 - `-h, --help` print help
+
+### Command
+
+- `update` download and install latest release binary (standalone installs)
 
 ## Build from source
 

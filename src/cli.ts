@@ -85,6 +85,7 @@ export function helpText(commandName = "tsfetch"): string {
     "Neofetch-style CLI dashboard for Tailscale tailnets.",
     "",
     `Usage: ${commandName} [options]`,
+    `       ${commandName} update`,
     "",
     "Options:",
     "  -h, --help         Show this help text",
@@ -96,5 +97,8 @@ export function helpText(commandName = "tsfetch"): string {
     "      --plain        Alias for --no-color",
     "      --private      Hide sensitive node/user details",
     "      --redact       Alias for --private",
+    "",
+    "Commands:",
+    "  update            Update tsfetch binary to latest release",
   ].join("\n");
 }

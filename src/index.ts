@@ -7,15 +7,28 @@ import { deriveSummary } from "./metrics";
 import { renderSummary, renderSummaryJson } from "./render";
 import { VERSION } from "./version";
 import { applyPrivacy } from "./privacy";
+import { runSelfUpdate } from "./update";
 
 function printError(message: string): void {
   process.stderr.write(`${message}\n`);
 }
 
-function main(): void {
+async function main(): Promise<void> {
+  const rawArgs = process.argv.slice(2);
+  if (rawArgs[0] === "update") {
+    try {
+      await runSelfUpdate();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Update failed";
+      printError(`tsfetch: ${message}`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   let options;
   try {
-    options = parseCliArgs(process.argv.slice(2));
+    options = parseCliArgs(rawArgs);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid CLI options";
     printError(message);
@@ -76,4 +89,8 @@ function main(): void {
   }
 }
 
-main();
+main().catch((error) => {
+  const message = error instanceof Error ? error.message : "Unexpected failure";
+  printError(`tsfetch: ${message}`);
+  process.exitCode = 1;
+});
