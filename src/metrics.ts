@@ -2,8 +2,12 @@ import { DerivedSummary, NodeTraffic, PeerStatus, TailscaleStatus } from "./type
 
 const SOON_DAYS = 30;
 
+function isNodePeer(peer: PeerStatus): boolean {
+  return Array.isArray(peer.TailscaleIPs) && peer.TailscaleIPs.length > 0;
+}
+
 function asPeerList(status: TailscaleStatus): PeerStatus[] {
-  return Object.values(status.Peer ?? {});
+  return Object.values(status.Peer ?? {}).filter(isNodePeer);
 }
 
 function cleanDnsName(raw: string | undefined): string {

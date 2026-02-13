@@ -50,7 +50,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
-    if (arg === "--show-all") {
+    if (arg === "--show-all" || arg === "-g") {
       options.privateMode = false;
       continue;
     }
@@ -102,7 +102,7 @@ export function helpText(commandName = "tsfetch"): string {
     "      --plain        Alias for --no-color",
     "      --private      Hide sensitive node/user details (default)",
     "      --redact       Alias for --private",
-    "      --show-all     Disable redaction and show full details",
+    "  -g, --show-all     Disable redaction and show full details",
     "",
     "Commands:",
     "  update            Update tsfetch binary to latest release",

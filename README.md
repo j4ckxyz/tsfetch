@@ -81,7 +81,7 @@ tsfetch update
 - `--theme auto|dark|light` color theme mode (default: `auto`)
 - `--no-color`, `--plain` disable ANSI color output
 - `--private`, `--redact` hide personal/sensitive details (default behavior)
-- `--show-all` disable redaction and show full details
+- `-g, --show-all` disable redaction and show full details
 - `--version` print version
 - `-h, --help` print help
 

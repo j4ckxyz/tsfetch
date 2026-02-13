@@ -1,12 +1,7 @@
 import { DerivedSummary } from "./types";
 
 function redactEmail(value: string): string {
-  const at = value.indexOf("@");
-  if (at <= 0) {
-    return "[redacted]";
-  }
-  const domain = value.slice(at + 1);
-  return domain ? `[redacted]@${domain}` : "[redacted]";
+  return "[redacted]";
 }
 
 function redactNodeName(index: number): string {
