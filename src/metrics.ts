@@ -3,11 +3,67 @@ import { DerivedSummary, NodeTraffic, PeerStatus, TailscaleStatus } from "./type
 const SOON_DAYS = 30;
 
 function isNodePeer(peer: PeerStatus): boolean {
-  return Array.isArray(peer.TailscaleIPs) && peer.TailscaleIPs.length > 0;
+  if (!Array.isArray(peer.TailscaleIPs) || peer.TailscaleIPs.length === 0) {
+    return false;
+  }
+  if (peer.InNetworkMap === false) {
+    return false;
+  }
+  if (peer.Expired === true) {
+    return false;
+  }
+  return true;
+}
+
+function peerIdentity(peer: PeerStatus): string | null {
+  if (peer.ID) {
+    return `id:${peer.ID}`;
+  }
+  const ip = peer.TailscaleIPs?.[0];
+  if (ip) {
+    return `ip:${ip}`;
+  }
+  const dns = cleanDnsName(peer.DNSName);
+  if (dns) {
+    return `dns:${dns}`;
+  }
+  if (peer.HostName) {
+    return `host:${peer.HostName}`;
+  }
+  return null;
+}
+
+function peerCompletenessScore(peer: PeerStatus): number {
+  let score = 0;
+  if (peer.ID) score += 4;
+  if (peer.DNSName) score += 3;
+  if (peer.HostName) score += 3;
+  if (peer.OS) score += 2;
+  if (peer.UserID !== undefined) score += 2;
+  if (peer.Online !== undefined) score += 1;
+  if (peer.Active !== undefined) score += 1;
+  if (peer.InEngine !== undefined) score += 1;
+  score += peer.TailscaleIPs?.length ?? 0;
+  return score;
 }
 
 function asPeerList(status: TailscaleStatus): PeerStatus[] {
-  return Object.values(status.Peer ?? {}).filter(isNodePeer);
+  const peers = Object.values(status.Peer ?? {}).filter(isNodePeer);
+  const deduped = new Map<string, PeerStatus>();
+
+  for (const peer of peers) {
+    const key = peerIdentity(peer);
+    if (!key) {
+      continue;
+    }
+
+    const existing = deduped.get(key);
+    if (!existing || peerCompletenessScore(peer) > peerCompletenessScore(existing)) {
+      deduped.set(key, peer);
+    }
+  }
+
+  return [...deduped.values()];
 }
 
 function cleanDnsName(raw: string | undefined): string {

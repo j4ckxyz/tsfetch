@@ -45,6 +45,8 @@ export interface PeerStatus {
   TxBytes?: number;
   KeyExpiry?: string;
   InEngine?: boolean;
+  InNetworkMap?: boolean;
+  Expired?: boolean;
 }
 
 export interface UserProfile {
