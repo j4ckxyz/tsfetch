@@ -11,6 +11,7 @@ It reads `tailscale status --json`, then prints a clean dashboard with:
 - exit-node and route stats
 - health + warning status
 - optional verbose node lists and traffic summary
+- privacy-first redaction by default (use `--show-all` to reveal full details)
 
 ## Requirements
 
@@ -64,6 +65,9 @@ The installer updates PATH for the selected scope so `tsfetch` works from PowerS
 tsfetch
 ```
 
+By default, output is redacted for shareable screenshots.
+Use `--show-all` to show full node/user details.
+
 Update to latest release:
 
 ```bash
@@ -76,9 +80,15 @@ tsfetch update
 - `--json` output machine-readable summary JSON
 - `--theme auto|dark|light` color theme mode (default: `auto`)
 - `--no-color`, `--plain` disable ANSI color output
-- `--private`, `--redact` hide personal/sensitive details (emails, hostnames, IPs)
+- `--private`, `--redact` hide personal/sensitive details (default behavior)
+- `--show-all` disable redaction and show full details
 - `--version` print version
 - `-h, --help` print help
+
+Optional richer logo rendering:
+- if [`chafa`](https://hpjansson.org/chafa/) is installed, tsfetch will render a themed SVG logo
+- fallback is built-in ASCII logo
+- set `TSFETCH_LOGO=ascii` to force ASCII, or `TSFETCH_LOGO=image` to force image attempt
 
 ### Command
 

@@ -30,7 +30,6 @@ export function applyPrivacy(summary: DerivedSummary): DerivedSummary {
     tailnet: {
       ...summary.tailnet,
       name: tailnetName,
-      magicDnsSuffix: "[redacted]",
     },
     self: {
       ...summary.self,

@@ -143,9 +143,10 @@ export function deriveSummary(status: TailscaleStatus, warnings: string[]): Deri
   const onlineNodes = onlinePeers.length + (self?.Online ? 1 : 0);
   const totalNodes = peers.length + (self ? 1 : 0);
 
-  const yourNodes = peers.filter((peer) => peer.UserID === selfUserId).length + (self ? 1 : 0);
-  const sharedToYou = peers.filter((peer) => Boolean(peer.ShareeNode)).length;
-  const foreignNodes = peers.filter((peer) => peer.UserID !== undefined && peer.UserID !== selfUserId).length;
+  const yourPeerNodes = peers.filter((peer) => peer.UserID === selfUserId).length;
+  const yourNodes = yourPeerNodes + (self ? 1 : 0);
+  const sharedToYou = peers.filter((peer) => peer.UserID !== selfUserId && Boolean(peer.ShareeNode)).length;
+  const foreignNodes = Math.max(peers.length - yourPeerNodes - sharedToYou, 0);
 
   const otherOwnerIds = new Set<number>();
   for (const peer of peers) {

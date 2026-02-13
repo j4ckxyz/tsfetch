@@ -153,7 +153,7 @@ export function renderSummary(summary: DerivedSummary, opts: CliOptions, palette
       palette,
       "[OWN]",
       "Ownership",
-      `${summary.counts.yourNodes} yours  |  ${summary.counts.sharedToYou} shared-to-you  |  ${summary.counts.foreignNodes} foreign`,
+      `${summary.counts.yourNodes} yours  |  ${summary.counts.sharedToYou} shared-to-you  |  ${summary.counts.foreignNodes} other-foreign`,
     ),
     row(
       palette,

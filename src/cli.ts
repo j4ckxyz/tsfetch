@@ -8,7 +8,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
     verbose: false,
     json: false,
     noColor: false,
-    privateMode: false,
+    privateMode: true,
     theme: "auto",
     help: false,
     version: false,
@@ -47,6 +47,11 @@ export function parseCliArgs(argv: string[]): CliOptions {
 
     if (arg === "--private" || arg === "--redact") {
       options.privateMode = true;
+      continue;
+    }
+
+    if (arg === "--show-all") {
+      options.privateMode = false;
       continue;
     }
 
@@ -95,8 +100,9 @@ export function helpText(commandName = "tsfetch"): string {
     "      --theme MODE   Theme mode: auto, dark, light",
     "      --no-color     Disable ANSI colors",
     "      --plain        Alias for --no-color",
-    "      --private      Hide sensitive node/user details",
+    "      --private      Hide sensitive node/user details (default)",
     "      --redact       Alias for --private",
+    "      --show-all     Disable redaction and show full details",
     "",
     "Commands:",
     "  update            Update tsfetch binary to latest release",
