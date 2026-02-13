@@ -90,6 +90,7 @@ Optional richer logo rendering:
 - if direct SVG rendering is unavailable, tsfetch will try `rsvg-convert` -> `chafa` automatically
 - fallback is built-in ASCII logo
 - set `TSFETCH_LOGO=ascii` to force ASCII, or `TSFETCH_LOGO=image` to force image attempt
+- set `TSFETCH_LOGO_SIZE=WxH` (for example `80x36`) to override logo size in terminal cells
 - set `TSFETCH_LOGO_DEBUG=1` to print renderer fallback reasons
 
 ### Command

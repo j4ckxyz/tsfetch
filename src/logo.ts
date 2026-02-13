@@ -62,6 +62,72 @@ function logLogoDebug(message: string): void {
   }
 }
 
+type LogoMode = "auto" | "ascii" | "image";
+
+function resolveLogoMode(): LogoMode {
+  const raw = (process.env.TSFETCH_LOGO ?? "auto").toLowerCase();
+  if (raw === "ascii") {
+    return "ascii";
+  }
+  if (raw === "image") {
+    return "image";
+  }
+  return "auto";
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (value < min) {
+    return min;
+  }
+  if (value > max) {
+    return max;
+  }
+  return value;
+}
+
+function parseSizeOverride(): { width: number; height: number } | null {
+  const raw = (process.env.TSFETCH_LOGO_SIZE ?? "").trim();
+  if (!raw) {
+    return null;
+  }
+
+  const match = raw.match(/^(\d+)\s*[xX]\s*(\d+)$/);
+  if (!match) {
+    logLogoDebug(`invalid TSFETCH_LOGO_SIZE value: ${raw}`);
+    return null;
+  }
+
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    logLogoDebug(`invalid TSFETCH_LOGO_SIZE value: ${raw}`);
+    return null;
+  }
+
+  return { width, height };
+}
+
+function resolveLogoSize(mode: LogoMode): { width: number; height: number } {
+  const override = parseSizeOverride();
+  if (override) {
+    return override;
+  }
+
+  if (mode !== "image") {
+    return { width: 35, height: 19 };
+  }
+
+  const cols = process.stdout.columns ?? 120;
+  const rows = process.stdout.rows ?? 40;
+  const reservedRightCols = 84;
+  const maxWidth = Math.max(14, cols - reservedRightCols);
+  const width = clamp(Math.floor(cols * 0.42), 14, maxWidth);
+  const maxHeight = Math.max(12, rows - 4);
+  const height = clamp(Math.round(width / 2), 12, maxHeight);
+
+  return { width, height };
+}
+
 function selectSvg(palette: Palette): string | null {
   if (palette.theme === "light") {
     return LIGHT_THEME_SVG;
@@ -73,7 +139,7 @@ function selectSvg(palette: Palette): string | null {
 }
 
 function shouldAttemptSvg(palette: Palette): boolean {
-  const mode = (process.env.TSFETCH_LOGO ?? "auto").toLowerCase();
+  const mode = resolveLogoMode();
   if (mode === "ascii") {
     return false;
   }
@@ -83,13 +149,21 @@ function shouldAttemptSvg(palette: Palette): boolean {
   return Boolean(process.stdout.isTTY && palette.enabled);
 }
 
-function renderWithChafa(input: string | Buffer, palette: Palette): string[] | null {
+function renderWithChafa(
+  input: string | Buffer,
+  palette: Palette,
+  size: { width: number; height: number },
+): string[] | null {
   const colorMode = palette.enabled ? "full" : "none";
-  const result = spawnSync("chafa", ["-f", "symbols", "--size=35x19", `--colors=${colorMode}`, "-"], {
-    encoding: "utf8",
-    input,
-    maxBuffer: 2 * 1024 * 1024,
-  });
+  const result = spawnSync(
+    "chafa",
+    ["-f", "symbols", `--size=${size.width}x${size.height}`, `--colors=${colorMode}`, "-"],
+    {
+      encoding: "utf8",
+      input,
+      maxBuffer: 4 * 1024 * 1024,
+    },
+  );
 
   if (result.error) {
     logLogoDebug(`renderer unavailable (${result.error.message})`);
@@ -155,13 +229,17 @@ function renderSvgLogo(palette: Palette): string[] | null {
     return null;
   }
 
+  const mode = resolveLogoMode();
+  const size = resolveLogoSize(mode);
+  logLogoDebug(`requested size ${size.width}x${size.height} (mode=${mode})`);
+
   const svg = selectSvg(palette);
   if (!svg) {
     logLogoDebug("no themed SVG selected");
     return null;
   }
 
-  const direct = renderWithChafa(svg, palette);
+  const direct = renderWithChafa(svg, palette, size);
   if (direct) {
     return direct;
   }
@@ -172,7 +250,7 @@ function renderSvgLogo(palette: Palette): string[] | null {
   }
 
   logLogoDebug("retrying logo render via rsvg-convert -> chafa");
-  return renderWithChafa(png, palette);
+  return renderWithChafa(png, palette, size);
 }
 
 export function renderLogo(palette: Palette): string[] {
