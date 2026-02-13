@@ -22,7 +22,7 @@ jobs:
           - os: ubuntu-24.04-arm
             target: node18-linux-arm64
             asset: tsfetch-linux-arm64
-          - os: macos-13
+          - os: macos-latest
             target: node18-macos-x64
             asset: tsfetch-macos-x64
           - os: macos-14
