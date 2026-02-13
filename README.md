@@ -87,8 +87,10 @@ tsfetch update
 
 Optional richer logo rendering:
 - if [`chafa`](https://hpjansson.org/chafa/) is installed, tsfetch will render a themed SVG logo
+- if direct SVG rendering is unavailable, tsfetch will try `rsvg-convert` -> `chafa` automatically
 - fallback is built-in ASCII logo
 - set `TSFETCH_LOGO=ascii` to force ASCII, or `TSFETCH_LOGO=image` to force image attempt
+- set `TSFETCH_LOGO_DEBUG=1` to print renderer fallback reasons
 
 ### Command
 

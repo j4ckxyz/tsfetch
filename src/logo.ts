@@ -1,4 +1,7 @@
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { Palette } from "./theme";
 
 const PERCENT_LOGO = [
@@ -53,6 +56,12 @@ function trimTrailingEmptyLines(lines: string[]): string[] {
   return output;
 }
 
+function logLogoDebug(message: string): void {
+  if (process.env.TSFETCH_LOGO_DEBUG === "1") {
+    process.stderr.write(`tsfetch: logo ${message}\n`);
+  }
+}
+
 function selectSvg(palette: Palette): string | null {
   if (palette.theme === "light") {
     return LIGHT_THEME_SVG;
@@ -74,29 +83,96 @@ function shouldAttemptSvg(palette: Palette): boolean {
   return Boolean(process.stdout.isTTY && palette.enabled);
 }
 
-function renderSvgLogo(palette: Palette): string[] | null {
-  if (!shouldAttemptSvg(palette)) {
-    return null;
-  }
-
-  const svg = selectSvg(palette);
-  if (!svg) {
-    return null;
-  }
-
+function renderWithChafa(input: string | Buffer, palette: Palette): string[] | null {
   const colorMode = palette.enabled ? "full" : "none";
   const result = spawnSync("chafa", ["-f", "symbols", "--size=35x19", `--colors=${colorMode}`, "-"], {
     encoding: "utf8",
-    input: svg,
+    input,
     maxBuffer: 2 * 1024 * 1024,
   });
 
-  if (result.error || result.status !== 0) {
+  if (result.error) {
+    logLogoDebug(`renderer unavailable (${result.error.message})`);
+    return null;
+  }
+
+  if (result.status !== 0) {
+    const stderr = (result.stderr ?? "").trim();
+    if (stderr) {
+      logLogoDebug(`renderer failed (${stderr})`);
+    } else {
+      logLogoDebug(`renderer failed (exit ${result.status})`);
+    }
     return null;
   }
 
   const lines = trimTrailingEmptyLines((result.stdout ?? "").split(/\r?\n/));
   return lines.length > 0 ? lines : null;
+}
+
+function convertSvgToPng(svg: string): Buffer | null {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "tsfetch-logo-"));
+  const svgPath = path.join(tmpDir, "logo.svg");
+  const pngPath = path.join(tmpDir, "logo.png");
+
+  try {
+    fs.writeFileSync(svgPath, svg, "utf8");
+
+    const convert = spawnSync("rsvg-convert", ["--format=png", "--output", pngPath, svgPath], {
+      encoding: "utf8",
+      maxBuffer: 2 * 1024 * 1024,
+    });
+
+    if (convert.error) {
+      logLogoDebug(`SVG converter unavailable (${convert.error.message})`);
+      return null;
+    }
+
+    if (convert.status !== 0) {
+      const stderr = (convert.stderr ?? "").trim();
+      if (stderr) {
+        logLogoDebug(`SVG converter failed (${stderr})`);
+      } else {
+        logLogoDebug(`SVG converter failed (exit ${convert.status})`);
+      }
+      return null;
+    }
+
+    if (!fs.existsSync(pngPath)) {
+      logLogoDebug("SVG converter did not produce PNG output");
+      return null;
+    }
+
+    return fs.readFileSync(pngPath);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+function renderSvgLogo(palette: Palette): string[] | null {
+  if (!shouldAttemptSvg(palette)) {
+    logLogoDebug("not attempting SVG (mode/ascii/no-tty/no-color)");
+    return null;
+  }
+
+  const svg = selectSvg(palette);
+  if (!svg) {
+    logLogoDebug("no themed SVG selected");
+    return null;
+  }
+
+  const direct = renderWithChafa(svg, palette);
+  if (direct) {
+    return direct;
+  }
+
+  const png = convertSvgToPng(svg);
+  if (!png) {
+    return null;
+  }
+
+  logLogoDebug("retrying logo render via rsvg-convert -> chafa");
+  return renderWithChafa(png, palette);
 }
 
 export function renderLogo(palette: Palette): string[] {

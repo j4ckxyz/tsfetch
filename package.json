@@ -1,6 +1,6 @@
 {
   "name": "tsfetch",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Neofetch-style CLI dashboard for Tailscale tailnets",
   "license": "MIT",
   "private": false,
