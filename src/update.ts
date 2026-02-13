@@ -170,6 +170,27 @@ function currentBinaryPath(): string {
   );
 }
 
+function replaceExecutable(downloadedPath: string, destinationPath: string): void {
+  const destinationDir = path.dirname(destinationPath);
+  const stagedPath = path.join(
+    destinationDir,
+    `.${path.basename(destinationPath)}.update-${process.pid}-${Date.now()}`,
+  );
+  let stagedExists = false;
+
+  try {
+    fs.copyFileSync(downloadedPath, stagedPath);
+    stagedExists = true;
+    fs.chmodSync(stagedPath, 0o755);
+    fs.renameSync(stagedPath, destinationPath);
+    stagedExists = false;
+  } finally {
+    if (stagedExists) {
+      fs.rmSync(stagedPath, { force: true });
+    }
+  }
+}
+
 export async function runSelfUpdate(): Promise<void> {
   const binaryPath = currentBinaryPath();
   const latest = await getLatestRelease();
@@ -187,14 +208,13 @@ export async function runSelfUpdate(): Promise<void> {
     await downloadFile(url, downloaded);
 
     if (os.platform() !== "win32") {
-      fs.chmodSync(downloaded, 0o755);
-      fs.renameSync(downloaded, binaryPath);
+      replaceExecutable(downloaded, binaryPath);
       process.stdout.write("Update complete. Restart your terminal if needed.\n");
       return;
     }
 
     const replacement = `${binaryPath}.new`;
-    fs.renameSync(downloaded, replacement);
+    fs.copyFileSync(downloaded, replacement);
     process.stdout.write(
       `Downloaded update to ${replacement}.\nClose tsfetch and replace current executable with this file.\n`,
     );
