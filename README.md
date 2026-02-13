@@ -24,6 +24,12 @@ It reads `tailscale status --json`, then prints a clean dashboard with:
 curl -fsSL https://raw.githubusercontent.com/j4ckxyz/tsfetch/main/install.sh | sh
 ```
 
+Install system-wide (requires root/admin on Unix):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/j4ckxyz/tsfetch/main/install.sh | sudo TSFETCH_INSTALL_DIR=/usr/local/bin sh
+```
+
 If you fork this project, set your repo slug first:
 
 ```bash
@@ -36,12 +42,21 @@ export TSFETCH_REPO="your-username/tsfetch"
 irm https://raw.githubusercontent.com/j4ckxyz/tsfetch/main/install.ps1 | iex
 ```
 
+Install for all users (run PowerShell as Administrator):
+
+```powershell
+$env:TSFETCH_SCOPE = "Machine"
+irm https://raw.githubusercontent.com/j4ckxyz/tsfetch/main/install.ps1 | iex
+```
+
 For forks:
 
 ```powershell
 $env:TSFETCH_REPO = "your-username/tsfetch"
 irm https://raw.githubusercontent.com/your-username/tsfetch/main/install.ps1 | iex
 ```
+
+The installer updates PATH for the selected scope so `tsfetch` works from PowerShell, Command Prompt, and Windows Terminal.
 
 ## Usage
 
@@ -90,6 +105,7 @@ This creates standalone binaries in `release/`:
 - `tsfetch-linux-x64`
 - `tsfetch-linux-arm64`
 - `tsfetch-win-x64.exe`
+- `tsfetch-win-arm64.exe`
 
 ## GitHub Releases automation
 

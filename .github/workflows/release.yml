@@ -19,18 +19,21 @@ jobs:
           - os: ubuntu-latest
             target: node18-linux-x64
             asset: tsfetch-linux-x64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             target: node18-linux-arm64
             asset: tsfetch-linux-arm64
-          - os: macos-latest
+          - os: macos-13
             target: node18-macos-x64
             asset: tsfetch-macos-x64
-          - os: macos-latest
+          - os: macos-14
             target: node18-macos-arm64
             asset: tsfetch-macos-arm64
           - os: windows-latest
             target: node18-win-x64
             asset: tsfetch-win-x64.exe
+          - os: windows-latest
+            target: node18-win-arm64
+            asset: tsfetch-win-arm64.exe
 
     steps:
       - name: Checkout
@@ -49,7 +52,17 @@ jobs:
         run: npm run clean:appledouble && npm run build
 
       - name: Build standalone binary
-        run: npx pkg dist/index.js --targets ${{ matrix.target }} --output release/${{ matrix.asset }}
+        run: npx pkg dist/index.js --targets ${{ matrix.target }} --no-bytecode --public --public-packages "*" --output release/${{ matrix.asset }}
+
+      - name: Smoke test binary
+        if: matrix.target != 'node18-win-arm64'
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            powershell -NoProfile -Command "& '.\\release\\${{ matrix.asset }}' --version"
+          else
+            ./release/${{ matrix.asset }} --version
+          fi
 
       - name: Generate checksum
         run: node -e "const fs=require('fs');const crypto=require('crypto');const p='release/${{ matrix.asset }}';const b=fs.readFileSync(p);const h=crypto.createHash('sha256').update(b).digest('hex');fs.writeFileSync(p+'.sha256',h+'  '+p.split('/').pop()+'\\n');"

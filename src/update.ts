@@ -7,8 +7,14 @@ import { createWriteStream } from "node:fs";
 
 const REPO = "j4ckxyz/tsfetch";
 
+interface ReleaseAsset {
+  name: string;
+  browser_download_url: string;
+}
+
 interface LatestRelease {
   tag_name: string;
+  assets: ReleaseAsset[];
 }
 
 function isPkgBinary(): boolean {
@@ -42,43 +48,66 @@ function requestText(url: string): Promise<string> {
   });
 }
 
-function platformAssetName(): string {
+function platformAssetCandidates(): string[] {
   const arch = os.arch();
   const platform = os.platform();
 
   if (platform === "darwin") {
     if (arch === "arm64") {
-      return "tsfetch-macos-arm64";
+      return ["tsfetch-macos-arm64", "tsfetch-macos-x64"];
     }
     if (arch === "x64") {
-      return "tsfetch-macos-x64";
+      return ["tsfetch-macos-x64"];
     }
   }
 
   if (platform === "linux") {
     if (arch === "arm64") {
-      return "tsfetch-linux-arm64";
+      return ["tsfetch-linux-arm64"];
     }
     if (arch === "x64") {
-      return "tsfetch-linux-x64";
+      return ["tsfetch-linux-x64"];
     }
   }
 
   if (platform === "win32") {
-    return "tsfetch-win-x64.exe";
+    if (arch === "arm64") {
+      return ["tsfetch-win-arm64.exe", "tsfetch-win-x64.exe"];
+    }
+
+    if (arch === "x64") {
+      return ["tsfetch-win-x64.exe"];
+    }
   }
 
   throw new Error(`Unsupported platform: ${platform}/${arch}`);
 }
 
-async function getLatestTag(): Promise<string> {
+async function getLatestRelease(): Promise<LatestRelease> {
   const url = `https://api.github.com/repos/${REPO}/releases/latest`;
   const payload = await requestText(url);
   const parsed = JSON.parse(payload) as LatestRelease;
   if (!parsed.tag_name) {
     throw new Error("Could not read latest release tag");
   }
-  return parsed.tag_name;
+  if (!Array.isArray(parsed.assets)) {
+    throw new Error("Could not read release assets");
+  }
+  return parsed;
+}
+
+function pickReleaseAsset(release: LatestRelease): ReleaseAsset {
+  const candidates = platformAssetCandidates();
+  for (const candidate of candidates) {
+    const asset = release.assets.find((entry) => entry.name === candidate);
+    if (asset && asset.browser_download_url) {
+      return asset;
+    }
+  }
+
+  throw new Error(
+    `No compatible release asset found. Looked for: ${candidates.join(", ")}`,
+  );
 }
 
 async function downloadFile(url: string, destination: string): Promise<void> {
@@ -143,15 +172,16 @@ function currentBinaryPath(): string {
 
 export async function runSelfUpdate(): Promise<void> {
   const binaryPath = currentBinaryPath();
-  const tag = await getLatestTag();
-  const asset = platformAssetName();
-  const url = `https://github.com/${REPO}/releases/download/${tag}/${asset}`;
+  const latest = await getLatestRelease();
+  const asset = pickReleaseAsset(latest);
+  const tag = latest.tag_name;
+  const url = asset.browser_download_url;
 
   process.stdout.write(`Checking latest release... ${tag}\n`);
-  process.stdout.write(`Downloading ${asset}...\n`);
+  process.stdout.write(`Downloading ${asset.name}...\n`);
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "tsfetch-update-"));
-  const downloaded = path.join(tmpDir, asset);
+  const downloaded = path.join(tmpDir, asset.name);
 
   try {
     await downloadFile(url, downloaded);
